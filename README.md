@@ -31,6 +31,8 @@ uvicorn app.main:app --reload
 
 ## Upload Files
 
+There are some info in the employees.csv that have null data so is going to create that rows in a separate table due to the integrity of the data.
+
 ```bash
 # Departments
 curl -X POST -F "file=@data/CSV_files/departments.csv" http://localhost:8000/upload/csv/departments
