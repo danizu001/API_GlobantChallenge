@@ -1,0 +1,8 @@
+# Ignorar archivos de caché de Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignorar archivos de base de datos SQLite
+migration.db
