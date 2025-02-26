@@ -12,7 +12,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from app.models.database import SessionLocal
 
 # Import the database table models
-from app.models.structure import Department, Job, Employee
+from app.models.structure import Department, Job, Employee, InvalidEmployee  # Nueva tabla para registros inválidos
 
 # Dictionary defining the expected column names for each table
 TABLE_COLUMNS = {
@@ -61,44 +61,59 @@ async def process_csv(table_name: str, chunk):
             # Convert these columns to numeric values, coercing errors to NaN
             chunk[numeric_cols] = chunk[numeric_cols].apply(pd.to_numeric, errors="coerce")
 
-            # Drop rows where there are NaN values in these columns (Potential change in the next commit to accept null values)
-            chunk = chunk.dropna(subset=numeric_cols)
-
-            # Convert columns to integers using Int64 to handle null values
-            chunk[numeric_cols] = chunk[numeric_cols].astype("Int64")
-            
             # Convert the date column to datetime, ignoring errors
             chunk["datetime"] = pd.to_datetime(chunk["datetime"], errors="coerce")
 
-            # Drop rows with NaN values in the date column (Potential change in the next commit to accept null values)
-            chunk = chunk.dropna(subset=["datetime"])
+            # Separar registros válidos e inválidos
+            # Un registro es inválido si tiene valores nulos en department_id, job_id o datetime
+            invalid_mask = (
+                chunk["department_id"].isna() |
+                chunk["job_id"].isna() |
+                chunk["datetime"].isna()
+            )
+            valid_data = chunk[~invalid_mask]  # Registros válidos
+            invalid_data = chunk[invalid_mask]  # Registros inválidos
 
-        # Convert the DataFrame into a list of dictionaries for database insertion
-        data = chunk.to_dict(orient="records")
-        
-        # Map the table name to its SQLAlchemy model
-        table_map = {
-            "departments": Department,
-            "jobs": Job,
-            "employees": Employee
-        }
+            # Insertar registros válidos en la tabla employees
+            if not valid_data.empty:
+                valid_records = valid_data.to_dict(orient="records")
+                stmt = insert(Employee).values(valid_records)
+                session.execute(stmt)
 
-        # Prepare the SQL statement to insert data into the corresponding table
-        stmt = insert(table_map[table_name]).values(data)
+            # Insertar registros inválidos en la tabla invalid_employees
+            if not invalid_data.empty:
+                invalid_records = invalid_data.to_dict(orient="records")
+                for record in invalid_records:
+                    # Convertir NaN a None para que SQLAlchemy lo maneje como NULL
+                    for key in record:
+                        if pd.isna(record[key]):
+                            record[key] = None
+                    # Agregar un campo adicional para almacenar la razón del error
+                    record["error_reason"] = "Invalid foreign key or datetime"
+                stmt = insert(InvalidEmployee).values(invalid_records)
+                session.execute(stmt)
 
-        # Execute the database insertion
-        session.execute(stmt)
+            # Commit los cambios a la base de datos
+            session.commit()
 
-        # Commit the changes to the database
-        session.commit()
+        else:
+            # Para las tablas departments y jobs, insertar todos los registros directamente
+            data = chunk.to_dict(orient="records")
+            table_map = {
+                "departments": Department,
+                "jobs": Job
+            }
+            stmt = insert(table_map[table_name]).values(data)
+            session.execute(stmt)
+            session.commit()
 
     except SQLAlchemyError as e:
-        # If there is a database error, roll back the transaction
+        # Si hay un error en la base de datos, hacer rollback de la transacción
         session.rollback()
         raise RuntimeError(f"Database error: {str(e)}") from e
     except Exception as e:
-        # Capture other unexpected errors
+        # Capturar otros errores inesperados
         raise RuntimeError(f"Unexpected error: {str(e)}") from e
     finally:
-        # Close the database session
+        # Cerrar la sesión de la base de datos
         session.close()

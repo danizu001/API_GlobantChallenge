@@ -48,3 +48,22 @@ class Employee(Base):
     datetime = Column(DateTime)  # Date and time related to the employee (e.g., hiring)
     department_id = Column(Integer)  # Relationship with the "departments" table
     job_id = Column(Integer)  # Relationship with the "jobs" table
+
+class InvalidEmployee(Base):
+    """
+    Model for employees that have missing values in 'employees' table.
+
+    Columns:
+    - id: Unique identifier for the employee.
+    - name: Employee's name (up to 100 characters).
+    - datetime: Date and time associated with the employee (e.g., hiring or registration).
+    - department_id: Identifier of the department to which the employee belongs.
+    - job_id: Identifier of the job the employee holds.
+    """
+    __tablename__ = "invalid_employees"
+    id = Column(Integer, primary_key=True) # Unique ID for the employee
+    name = Column(String(100)) # Employee's name (max. 100 characters)
+    datetime = Column(DateTime, nullable=True) # Date and time related to the employee (e.g., hiring)
+    department_id = Column(Integer, nullable=True) # Relationship with the "departments" table
+    job_id = Column(Integer, nullable=True) # Relationship with the "jobs" table
+    error_reason = Column(String(255)) # Indicates the value missing
