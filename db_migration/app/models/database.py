@@ -2,12 +2,13 @@
 from sqlalchemy import create_engine, delete
 from sqlalchemy.orm import sessionmaker
 
-# Import the database connection URL from the configuration file
-from config import DATABASE_URL
-
 # Import the base and table models
 from .base import Base  # Import the database base
 from .structure import Department, Job, Employee, InvalidEmployee  # Import data models
+
+import os
+
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./test.db")
 
 # Create the database engine using the connection URL
 engine = create_engine(DATABASE_URL)
