@@ -33,5 +33,15 @@
         "id": 9,
         "department": "Marketing",
         "hired": 142
+    },
+    {
+        "id": 10,
+        "department": "Training",
+        "hired": 114
+    },
+    {
+        "id": 2,
+        "department": "Sales",
+        "hired": 94
     }
 ]

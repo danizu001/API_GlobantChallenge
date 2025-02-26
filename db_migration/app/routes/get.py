@@ -37,7 +37,22 @@ async def hires_by_quarter():
             JOIN jobs j ON e.job_id = j.id
             WHERE strftime('%Y', e.datetime) = '2021'
             GROUP BY d.department, j.job
-            ORDER BY d.department, j.job;
+
+            UNION ALL
+
+            SELECT 
+                d.department AS department,
+                j.job AS job,
+                SUM(CASE WHEN strftime('%m', ie.datetime) IN ('01', '02', '03') THEN 1 ELSE 0 END) AS Q1,
+                SUM(CASE WHEN strftime('%m', ie.datetime) IN ('04', '05', '06') THEN 1 ELSE 0 END) AS Q2,
+                SUM(CASE WHEN strftime('%m', ie.datetime) IN ('07', '08', '09') THEN 1 ELSE 0 END) AS Q3,
+                SUM(CASE WHEN strftime('%m', ie.datetime) IN ('10', '11', '12') THEN 1 ELSE 0 END) AS Q4
+            FROM invalid_employees ie
+            JOIN departments d ON ie.department_id = d.id
+            JOIN jobs j ON ie.job_id = j.id
+            WHERE strftime('%Y', ie.datetime) = '2021'
+            GROUP BY d.department, j.job
+            ORDER BY department, job;
         """)
         
         # Execute the query
@@ -86,6 +101,17 @@ async def departments_above_mean():
                 FROM employees e
                 JOIN departments d ON e.department_id = d.id
                 WHERE strftime('%Y', e.datetime) = '2021'
+                GROUP BY d.id, d.department
+
+                UNION ALL
+
+                SELECT 
+                    d.id AS id,
+                    d.department AS department,
+                    COUNT(ie.id) AS hired
+                FROM invalid_employees ie
+                JOIN departments d ON ie.department_id = d.id
+                WHERE strftime('%Y', ie.datetime) = '2021'
                 GROUP BY d.id, d.department
             ),
             mean_hires AS (
