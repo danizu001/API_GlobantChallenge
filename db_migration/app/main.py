@@ -1,26 +1,24 @@
-from fastapi import FastAPI, HTTPException
-from contextlib import asynccontextmanager
-from app.models.database import create_db_and_tables, reset_table
-from app.services.file_processing import process_csv_from_path
+# Import FastAPI to create the web application
+from fastapi import FastAPI
 
+# Import asynccontextmanager to manage the application lifecycle
+from contextlib import asynccontextmanager
+
+# Import the function to create the database and tables
+from app.models.database import create_db_and_tables
+
+# Import the router that handles file upload routes
+from app.routes.upload import router as upload_router
+
+# Define an application lifecycle handler
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Create the database and tables when the application starts
     create_db_and_tables()
-    yield
+    yield  # Continue with application execution
 
+# Create the FastAPI instance with the defined lifecycle
 app = FastAPI(title="DB Migration API", lifespan=lifespan)
 
-# Ruta temporal para probar el reseteo de tablas
-@app.post("/test-reset/{table_name}")
-async def test_reset(table_name: str):
-    reset_table(table_name)
-    return {"message": f"Table '{table_name}' reset successfully"}
-
-# Ruta temporal para cargar un CSV desde una ruta
-@app.post("/test-load-csv/{table_name}")
-async def test_load_csv(table_name: str, file_path: str):
-    try:
-        process_csv_from_path(table_name, file_path)
-        return {"message": f"CSV file '{file_path}' processed successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# Include file upload-related routes in the application
+app.include_router(upload_router)

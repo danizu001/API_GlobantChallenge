@@ -6,3 +6,6 @@ __pycache__/
 
 # Ignorar archivos de base de datos SQLite
 migration.db
+
+# Ignorar archivos de entorno virtual
+mi_api_globant/
