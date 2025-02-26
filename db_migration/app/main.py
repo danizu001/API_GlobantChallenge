@@ -10,6 +10,9 @@ from app.models.database import create_db_and_tables
 # Import the router that handles file upload routes
 from app.routes.upload import router as upload_router
 
+# Import the router that handles get upload routes
+from app.routes.get import router as metrics_router
+
 # Define an application lifecycle handler
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -22,3 +25,6 @@ app = FastAPI(title="DB Migration API", lifespan=lifespan)
 
 # Include file upload-related routes in the application
 app.include_router(upload_router)
+
+# Include file get-related routes in the application
+app.include_router(metrics_router)
