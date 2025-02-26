@@ -7,7 +7,7 @@ from config import DATABASE_URL
 
 # Import the base and table models
 from .base import Base  # Import the database base
-from .structure import Department, Job, Employee  # Import data models
+from .structure import Department, Job, Employee, InvalidEmployee  # Import data models
 
 # Create the database engine using the connection URL
 engine = create_engine(DATABASE_URL)
@@ -49,7 +49,8 @@ def reset_table(table_name: str):
     table_map = {
         "departments": Department,
         "jobs": Job,
-        "employees": Employee
+        "employees": Employee,
+        "invalid_employees": InvalidEmployee
     }
     
     db = SessionLocal()  # Start a database session
